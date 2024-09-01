@@ -1,3 +1,5 @@
+from datetime import datetime, date, timedelta, timezone, time
+
 menu = """
     [D] Deposit
     [W] Withdraw
@@ -9,7 +11,9 @@ balance = 0
 limit = 1000
 statement = ""
 withdraw_number = 0
-WITHDRAW_LIMIT = 5
+WITHDRAW_LIMIT = 3
+
+date_now = datetime.now()
 
 while True:
     option = input(menu)
@@ -19,9 +23,9 @@ while True:
 
         if value > 0:
             balance += value
-            statement += f"Deposit: $ {value:.2f}\n"
+            statement += f"Deposit: $ {value:.2f} {date_now}\n"
             print("======================================")
-            print(f"Successful Deposit: $ {value}".center(10))
+            print(f"Successful Deposit: $ {value} {date_now} ".center(10))
             print("======================================")
 
         else:
@@ -41,14 +45,14 @@ while True:
             print("Operation failed! Withdrawal amount exceeds limit")
 
         elif exceeded_withdraw:
-            print("Operation failed! Maximum number of withdrawals exceeded")
+            print(f"Operation failed! Maximum number of withdrawals exceeded for today: {date_now}")
 
         elif value > 0:
             balance -= value
-            statement += f"Withdrawal: $ {value:.2f}\n"
+            statement += f"Withdrawal: $ {value:.2f} {date_now}\n"
             withdraw_number += 1
             print("======================================")
-            print(f"Successful withdrawal: $ {value}".center(10))
+            print(f"Successful withdrawal: $ {value} {date_now}".center(10))
             print("======================================")
 
         else:
@@ -58,6 +62,7 @@ while True:
         print("\n============== STATEMENT ==============")
         print("No transactions were made" if not statement else statement)
         print(f"\nBalance: $ {balance:.2f}")
+        print(f"Date: {date_now}")
         print("=======================================")
 
 
