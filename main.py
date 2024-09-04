@@ -1,9 +1,11 @@
 import textwrap
 from datetime import datetime
-from typing import Final
 
-from account import Account
-from user import User
+from account import *
+from client import Client
+from deposit import Deposit
+from transaction import Transaction
+from withdraw import Withdraw
 
 date_now = datetime.now()
 
@@ -21,64 +23,84 @@ def menu():
         => """
     return input(textwrap.dedent(menu))
 
-def deposit(balance, value, statement):
-    if value > 0:
-        balance += value
-        statement += f"Deposit: $ {value:.2f} {date_now}\n"
-        print("======================================")
-        print(f"Successful Deposit: $ {value} {date_now} ".center(10))
-        print("======================================")
-        return balance , statement
+def deposit(clients):
+    document = input("Type your Document here: ")
+    client = filter_client(document, clients)
 
-    else:
-        print("Operation failed! The value is invalid")
+    if not client:
+        print("\n@@@ Client not found! @@@")
+        return
 
-def withdraw(*, balance, value, statement, limit, withdraw_number, withdraw_limit):
-    exceeded_balance = value > balance
-    exceeded_limit = value > limit
-    print(withdraw_number , withdraw_limit)
-    exceeded_withdraw = withdraw_number >= withdraw_limit
+    value = float(input("Type the deposit value: "))
+    transaction = Deposit(value)
 
-    if exceeded_balance:
-        print("Operation failed! You don't have enough balance!")
-        return balance, statement, withdraw_number
+    account = recover_client_account(client)
+    if not account:
+        return
 
-    elif exceeded_limit:
-        print("Operation failed! Withdrawal amount exceeds limit")
-        return balance, statement, withdraw_number
+    client.make_transaction(account, transaction)
 
-    elif exceeded_withdraw:
-        print(f"Operation failed! Maximum number of withdrawals exceeded for today: {date_now}")
-        return balance, statement, withdraw_number
+def withdraw(clients):
+    document = input("Type your Document here: ")
+    client = filter_client(document, clients)
 
-    elif value > 0:
-        balance -= value
-        statement += f"Withdrawal: $ {value:.2f} {date_now}\n"
-        withdraw_number += 1
-        print("======================================")
-        print(f"Successful withdrawal: $ {value} {date_now}".center(10))
-        print("======================================")
-        return balance, statement , withdraw_number
+    if not client:
+        print("\n@@@ Client not found! @@@")
+        return
 
-    else:
-        print("Operation failed! The value is invalid")
+    value = float(input("Type the withdraw value: "))
+    transaction = Withdraw(value)
 
-def show_statement(balance, /, *, statement):
+    account = recover_client_account(client)
+    if not account:
+        return
+
+    client.make_transaction(account, transaction)
+
+def recover_client_account(client):
+    if not client.accounts:
+        print("\n @@@ Client has no accounts! @@@")
+        return
+
+    account_number = input("Type the number from one of your accounts: ")
+    account_chosen = [account for account in client.accounts if account.number == account_number]
+    return account_chosen[0]
+
+def show_statement(clients):
+    document = input("Type your Document here: ")
+    client = filter_client(document, clients)
+
+    if not client:
+        print("\n@@@ Client not found! @@@")
+        return
+
+    account = recover_client_account(client)
+    if not account:
+        return
+
     print("\n============== STATEMENT ==============")
-    print("No transactions were made" if not statement else statement)
-    print(f"\nBalance: $ {balance:.2f}")
-    print(f"Date: {date_now}")
-    print("=======================================")
+    transactions = account.statement.transactions
+
+    extract = ""
+    if not transactions:
+        extract = "No transaction made!"
+    else:
+        for transaction in transactions:
+            extract += f"\n{transaction['type']}: \n\tR${transaction['value']:.2f}"
+
+    print(extract)
+    print(f"\nBalance:\n\tR$ {account.balance:.2f}")
+    print("==========================================")
 
 def create_user(users):
     document = input("Type your document (only numbers): ")
-    user = filter_user(document, users)
+    user = filter_client(document, users)
 
     if user is  None:
         user_name = input("Type your complete name: ")
         user_birth = input("Type the day of birth (yyyy-mm-dd): ")
         user_address = input("Type your Address: (Street, Neighbourhood, City-State):  ")
-        user = User(user_name, document,user_birth, user_address)
+        user = Client(user_address)
 
         users.append(user)
         print("User successful created!")
@@ -86,24 +108,21 @@ def create_user(users):
     else:
         print("There is already a user with this document")
 
-def filter_user(document, users):
-    for user in users:
-        if user.document == document:
-            return user
-        else:
-            return None
+def filter_client(document, clients):
+   filter_clients = [client for client in clients if client.document == document]
+   return filter_clients[0] if filter_clients else None
 
 def show_users(users):
     print("============ USERS REGISTERED ON SYSTEM ===========\n")
     for user in users:
         print(f"User Name: {user.name} - Document: {user.document}\n")
 
-def create_account(agency, account_number, users):
+def create_account(account_number, clients, accounts):
     document = input("Type your Document here: ")
-    user = filter_user(document, users)
+    client = filter_client(document, clients)
 
-    if user:
-        account = Account(agency, account_number, user)
+    if client:
+        account = Account(account_number, client)
         print("\n Account successful created! ")
         return account
 
@@ -116,48 +135,30 @@ def show_accounts(accounts):
         print(f"Agency - {account.agency}, Number: {account.number}, User: {account.user.name}")
 
 def main():
-    WITHDRAW_LIMIT = 3
-    AGENCY = "0001"
-
-    balance = 0
-    limit = 1000
-    statement = ""
-    withdraw_number = 0
-
-    users = []
+    clients = []
     accounts = []
 
     while True:
         option = menu()
 
         if option == "D":
-            value = float(input("Enter the deposit amount: "))
-            balance, statement = deposit(balance, value, statement)
+            deposit(clients)
 
         elif option == "W":
-            value = float(input("Enter the withdrawal amount:"))
-            balance, statement , withdraw_number = withdraw(
-                balance=balance,
-                value=value,
-                statement=statement,
-                limit=limit,
-                withdraw_number=withdraw_number,
-                withdraw_limit=WITHDRAW_LIMIT
-            )
+            withdraw(clients)
 
         elif option == "S":
-            show_statement(balance, statement=statement)
+            show_statement(clients)
 
         elif option == "NU":
-            create_user(users)
+            create_user(clients)
 
         elif option == "SU":
-            show_users(users)
+            show_users(clients)
 
         elif option == "NA":
             account_number = len(accounts) + 1
-            account = create_account(AGENCY, account_number, users)
-            accounts.append(account)
+            create_account(account_number, clients, accounts)
 
         elif option == "SA":
             show_accounts(accounts)
