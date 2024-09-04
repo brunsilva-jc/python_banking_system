@@ -7,7 +7,7 @@ class Withdraw(Transaction):
 
     @property
     def value(self):
-        self._value
+        return self._value
 
     def register(self, account):
         success_transaction = account.withdraw(self.value)

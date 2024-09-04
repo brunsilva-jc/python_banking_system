@@ -1,11 +1,9 @@
-from datetime import datetime
-
-from account import Account
+from account import Account, datetime
 from withdraw import Withdraw
 
 
 class CurrentAccount(Account):
-    def __init__(self, number, client, limit=500, withdraw_limit=5):
+    def __init__(self, number, client, limit=1000, withdraw_limit=5):
         super().__init__(number, client)
         self.limit = limit
         self.withdraw_limit= withdraw_limit

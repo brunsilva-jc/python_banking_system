@@ -1,13 +1,8 @@
 import textwrap
-from datetime import datetime
 
-from account import *
-from client import Client
+from current_account import CurrentAccount, Withdraw
 from deposit import Deposit
-from transaction import Transaction
-from withdraw import Withdraw
-
-date_now = datetime.now()
+from natural_person import NaturalPerson
 
 def menu():
     menu = """ \n
@@ -17,39 +12,21 @@ def menu():
         [S]\tStatement
         [NA]\tNew Account
         [SA]\tShow Accounts
-        [NU]\tNew User
-        [SU]\tShow Users
+        [NC]\tNew Client
+        [SC]\tShow Clients
         [Q]\tQuit
         => """
     return input(textwrap.dedent(menu))
 
-def deposit(clients):
-    document = input("Type your Document here: ")
-    client = filter_client(document, clients)
+def make_transaction(clients, transaction_type: str):
+    client, document = get_client(clients)
 
     if not client:
         print("\n@@@ Client not found! @@@")
         return
 
-    value = float(input("Type the deposit value: "))
-    transaction = Deposit(value)
-
-    account = recover_client_account(client)
-    if not account:
-        return
-
-    client.make_transaction(account, transaction)
-
-def withdraw(clients):
-    document = input("Type your Document here: ")
-    client = filter_client(document, clients)
-
-    if not client:
-        print("\n@@@ Client not found! @@@")
-        return
-
-    value = float(input("Type the withdraw value: "))
-    transaction = Withdraw(value)
+    value = float(input(f"Type the {'Deposit' if transaction_type == 'D' else 'Withdraw'} value: "))
+    transaction = Deposit(value) if transaction_type == 'D' else Withdraw(value)
 
     account = recover_client_account(client)
     if not account:
@@ -63,7 +40,7 @@ def recover_client_account(client):
         return
 
     account_number = input("Type the number from one of your accounts: ")
-    account_chosen = [account for account in client.accounts if account.number == account_number]
+    account_chosen = [account for account in client.accounts if account.number == int(account_number)]
     return account_chosen[0]
 
 def show_statement(clients):
@@ -89,24 +66,29 @@ def show_statement(clients):
             extract += f"\n{transaction['type']}: \n\tR${transaction['value']:.2f}"
 
     print(extract)
-    print(f"\nBalance:\n\tR$ {account.balance:.2f}")
+    print(f"\nBalance:\n\tR$ {account.account_balance:.2f}")
     print("==========================================")
 
-def create_user(users):
-    document = input("Type your document (only numbers): ")
-    user = filter_client(document, users)
+def create_client(clients):
+    client, document = get_client(clients)
 
-    if user is  None:
-        user_name = input("Type your complete name: ")
-        user_birth = input("Type the day of birth (yyyy-mm-dd): ")
-        user_address = input("Type your Address: (Street, Neighbourhood, City-State):  ")
-        user = Client(user_address)
-
-        users.append(user)
-        print("User successful created!")
-
-    else:
+    if client:
         print("There is already a user with this document")
+        return
+
+    name = input("Type your complete name: ")
+    birth_date = input("Type your birth date (yyyy-mm-aa): ")
+    address = input("Type your complete address (street - number - neighbourhood - city/state): ")
+
+    client = NaturalPerson(
+        name=name,
+        birth_date=birth_date,
+        address=address,
+        document=document
+    )
+
+    clients.append(client)
+    print("\n Client successful created!")
 
 def filter_client(document, clients):
    filter_clients = [client for client in clients if client.document == document]
@@ -118,21 +100,29 @@ def show_users(users):
         print(f"User Name: {user.name} - Document: {user.document}\n")
 
 def create_account(account_number, clients, accounts):
-    document = input("Type your Document here: ")
-    client = filter_client(document, clients)
+    client, document = get_client(clients)
 
-    if client:
-        account = Account(account_number, client)
-        print("\n Account successful created! ")
-        return account
+    if not client:
+        print("User Not Found!")
+        return
 
-    print("User Not Found!")
+    account = CurrentAccount.new_account(client=client, number=account_number)
+    accounts.append(account)
+    client.accounts.append(account)
+    print("Account successful created!")
 
 def show_accounts(accounts):
-    print(accounts)
-    print("======== Accounts registered on the system =======")
+    if not accounts:
+        print("There is no Accounts!")
+
     for account in accounts:
-        print(f"Agency - {account.agency}, Number: {account.number}, User: {account.user.name}")
+        print("=" * 100)
+        print(textwrap.dedent(str(account)))
+
+def get_client(clients):
+    document = input("Type your Document here: ")
+    client = filter_client(document, clients)
+    return client, document
 
 def main():
     clients = []
@@ -142,18 +132,18 @@ def main():
         option = menu()
 
         if option == "D":
-            deposit(clients)
+            make_transaction(clients, option)
 
         elif option == "W":
-            withdraw(clients)
+            make_transaction(clients, option)
 
         elif option == "S":
             show_statement(clients)
 
-        elif option == "NU":
-            create_user(clients)
+        elif option == "NC":
+            create_client(clients)
 
-        elif option == "SU":
+        elif option == "SC":
             show_users(clients)
 
         elif option == "NA":

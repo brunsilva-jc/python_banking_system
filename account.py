@@ -1,13 +1,10 @@
-from msilib.schema import Property
 from datetime import datetime
 from statement import Statement
-
-from main import date_now
 
 
 class Account:
     def __init__(self, number, client):
-        self._balance = 0
+        self._account_balance = 0
         self._agency = "0001"
         self._number = number
         self._client = client
@@ -17,37 +14,37 @@ class Account:
     def new_account(cls, client, number):
         return cls(number, client)
 
-    @Property
-    def balance(self):
-        return self._balance
+    @property
+    def account_balance(self):
+        return self._account_balance
 
-    @Property
+    @property
     def number(self):
         return self._number
 
-    @Property
+    @property
     def agency(self):
         return  self._agency
 
-    @Property
+    @property
     def client(self):
         return self._client
 
-    @Property
+    @property
     def statement(self):
         return self._statement
 
 
     def withdraw(self, value):
-        balance = self.balance
+        balance = self.account_balance
         exceeded_balance = value > balance
 
         if exceeded_balance:
             print("\n@@@ Operation failed! You don't have enough balance! @@@")
 
         elif value > 0:
-            self.balance -= value
-            print(f"\nSuccessful withdrawal: $ {value} {datetime.now}".center(10))
+            self._account_balance -= value
+            print(f"\nSuccessful withdrawal: $ {value} {datetime.now()}".center(10))
             return True
 
         else:
@@ -57,8 +54,8 @@ class Account:
 
     def deposit(self, value):
         if value > 0:
-            self._balance += value
-            print(f"\nSuccessful Deposit: $ {value} {date_now} ".center(10))
+            self._account_balance += value
+            print(f"\nSuccessful Deposit: $ {value} {datetime.now()} ".center(10))
         else:
             print("\n @@@ Operation failed! The value is invalid @@@")
             return False

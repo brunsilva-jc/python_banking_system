@@ -1,8 +1,5 @@
 from datetime import datetime
 
-from main import date_now
-
-
 class Statement:
     def __init__(self):
         self._transactions = []
@@ -16,6 +13,6 @@ class Statement:
             {
                 "type": transaction.__class__.__name__,
                 "value": transaction.value,
-                "data": datetime.now().strftime("%Y-%m-%d %H:%M:%s"),
+                "data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
         )
