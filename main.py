@@ -94,7 +94,7 @@ def filter_client(document, clients):
    filter_clients = [client for client in clients if client.document == document]
    return filter_clients[0] if filter_clients else None
 
-def show_users(users):
+def show_clients(users):
     print("============ USERS REGISTERED ON SYSTEM ===========\n")
     for user in users:
         print(f"User Name: {user.name} - Document: {user.document}\n")
@@ -144,7 +144,7 @@ def main():
             create_client(clients)
 
         elif option == "SC":
-            show_users(clients)
+            show_clients(clients)
 
         elif option == "NA":
             account_number = len(accounts) + 1
